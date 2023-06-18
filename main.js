@@ -3,13 +3,17 @@ const user = require("./cmds_user.js");
 const quiz = require("./cmds_quiz.js");
 const favs = require("./cmds_favs.js");
 const readline = require('readline');
+let net = require('net');
+let port = 8080;
+
+let server = net.createServer((socket) => {
 
 const rl = readline.createInterface({
-  input: process.stdin,
-  output: process.stdout,
+  input: socket,
+  output: socket,
   prompt: "> "
 });
-rl.log = (msg) => console.log(msg);  // Add log to rl interface
+rl.log = (msg) => socket.write(msg + '\n');  // Add log to rl interface
 rl.questionP = function (string) {   // Add questionP to rl interface
   return new Promise ( (resolve) => {
     this.question(`  ${string}: `, (answer) => resolve(answer.trim()))
@@ -41,7 +45,7 @@ rl.on('line', async (line) => {
     else if (['cf', 'fc'].includes(cmd))      { await favs.create(rl);}
     else if (['df', 'fd'].includes(cmd))      { await favs.delete(rl);}
 
-    else if ('e'===cmd)  { rl.log('Bye!'); process.exit(0);}
+    else if ('e'===cmd)  { rl.log('Bye!'); socket.destroy(); console.log("Cliente desconectado");}
     else                 {  rl.log('UNSUPPORTED COMMAND!');
                             user.help(rl);
                          };
@@ -49,3 +53,8 @@ rl.on('line', async (line) => {
     finally       { rl.prompt(); }
   });
 
+});
+
+server.listen(port);
+
+console.log('Server at port: ' + port);
